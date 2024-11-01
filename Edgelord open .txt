@@ -1,0 +1,323 @@
+game.StarterGui:SetCore("SendNotification", {
+    Title = "Script Loaded";
+    Text = "Made by Aspect10 on Discord";
+    Icon = "rbxassetid://6023426923"; -- Roblox
+    Duration = 5
+})
+
+
+-- Get the Players service
+local Players = game:GetService("Players")
+
+-- Create the trail and highlight templates
+local trailTemplate = Instance.new("Trail")
+trailTemplate.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 255)), -- Start with bright blue
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 150, 255)), -- Midway color for a lighter blue
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 255))  -- End back to bright blue
+})
+trailTemplate.Lifetime = 0.7 -- Duration of the trail
+trailTemplate.Transparency = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 0), -- Start visible
+    NumberSequenceKeypoint.new(0.5, 0.5), -- Halfway point for fading
+    NumberSequenceKeypoint.new(1, 1)  -- End fully transparent
+})
+trailTemplate.LightEmission = 1 -- Bright light emission
+trailTemplate.WidthScale = NumberSequence.new({
+    NumberSequenceKeypoint.new(0, 1), -- Start with full width
+    NumberSequenceKeypoint.new(1, 0)  -- Fade out to no width
+})
+
+-- Create a Highlight template for a tight bright blue outline
+local highlightTemplate = Instance.new("Highlight")
+highlightTemplate.FillTransparency = 1 -- Makes the inside transparent
+highlightTemplate.OutlineTransparency = 0.05 -- Slightly lower transparency for thicker outline
+highlightTemplate.OutlineColor = Color3.fromRGB(0, 0, 255) -- Bright blue color
+
+-- Get the player's character
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+
+-- Function to setup highlight on character
+local function setupHighlight(newCharacter)
+    local highlight = highlightTemplate:Clone()
+    highlight.Adornee = newCharacter
+    highlight.Parent = newCharacter
+end
+
+-- Function to setup trail on character
+local function setupTrail(newCharacter)
+    local trail = trailTemplate:Clone()
+    trail.Parent = newCharacter:WaitForChild("HumanoidRootPart")
+    trail.Attachment0 = Instance.new("Attachment", newCharacter.HumanoidRootPart)
+    trail.Attachment1 = Instance.new("Attachment", newCharacter.HumanoidRootPart)
+end
+
+-- Function to setup PointLight on character
+local function setupPointLight(newCharacter)
+    local pointLight = Instance.new("PointLight")
+    pointLight.Parent = newCharacter:WaitForChild("HumanoidRootPart")
+    pointLight.Color = Color3.fromRGB(0, 0, 255) -- Bright blue color
+    pointLight.Range = 10 -- Keep the same range for illumination
+    pointLight.Brightness = 5 -- Set brightness to make the effect stand out
+end
+
+-- Setup highlight, trail, and point light for the current character
+setupHighlight(character)
+setupTrail(character)
+setupPointLight(character)
+
+-- Reapply effects if the character respawns
+player.CharacterAdded:Connect(function(newCharacter)
+    setupHighlight(newCharacter)
+    setupTrail(newCharacter)
+    setupPointLight(newCharacter)
+end)
+
+fireclickdetector(game.Workspace.Lobby['Boxer'].ClickDetector)
+-- Function to create buttons in the PlayerGui
+local function createButtons()
+    local player = game.Players.LocalPlayer
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PersistentButtons"  -- Name the ScreenGui for identification
+    screenGui.Parent = player:WaitForChild("PlayerGui")  -- Parent to PlayerGui
+
+    -- Function to create a button
+    local function createButton(letter, position)
+        local button = Instance.new("TextButton")
+        button.Name = letter  -- Set button name to the letter
+        button.Size = UDim2.new(0, 60, 0, 60)  -- Set size to 60x60
+        button.Position = position  -- Set position based on argument
+        button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Set background color to red
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Set text color to white
+        button.Font = Enum.Font.SourceSansBold  -- Use a bold font for emphasis
+        button.TextSize = 24  -- Set text size for better visibility
+        button.Text = letter  -- Set button text to the letter
+        button.BorderSizePixel = 0  -- Remove border
+
+        -- Make the button round by setting the CornerRadius to 0.5
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0.5, 0)  -- Fully round corners
+        corner.Parent = button
+
+        -- Add a UIStroke to create a shadow effect
+        local uiStroke = Instance.new("UIStroke")
+        uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border  -- Apply to border
+        uiStroke.Color = Color3.fromRGB(0, 0, 0)  -- Black stroke for contrast
+        uiStroke.Thickness = 4  -- Thickness of the stroke
+        uiStroke.Parent = button
+
+        button.Parent = screenGui  -- Set the parent to ScreenGui
+
+        -- Button hover effect
+        button.MouseEnter:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)  -- Darker red on hover
+            button.Size = UDim2.new(0, 70, 0, 70)  -- Slightly increase size
+        end)
+
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- Original color
+            button.Size = UDim2.new(0, 60, 0, 60)  -- Reset size
+        end)
+
+        -- Button click event for Z and T
+        button.MouseButton1Click:Connect(function()
+            if letter == "Z" then
+                -- Play the hit animation when "Z" is clicked
+                local character = player.Character or player.CharacterAdded:Wait()  -- Ensure the character is loaded
+                if character and character:FindFirstChild("Humanoid") then
+                    local humanoid = character.Humanoid
+                    local animation = Instance.new("Animation")
+                    animation.AnimationId = "rbxassetid://17670135152"  -- Hit animation ID
+
+                    local animationTrack = humanoid:LoadAnimation(animation)
+                    animationTrack:Play()  -- Play the hit animation
+                end
+
+                -- Loop through all players and fire the Boxing event
+                local Players = game:GetService("Players")
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local BoxingEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Boxing")
+
+                for _, otherPlayer in pairs(Players:GetPlayers()) do
+                    local args = {
+                        [1] = otherPlayer,  -- For each player
+                        [2] = true
+                    }
+                    BoxingEvent:FireServer(unpack(args))  -- Fire the event for each player
+                end
+            elseif letter == "T" then
+                -- Teleport logic for the "T" button
+                local character = player.Character or player.CharacterAdded:Wait()
+
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local rootPart = character.HumanoidRootPart
+
+                    -- Get the player's current direction and teleport forward
+                    local forwardDirection = rootPart.CFrame.LookVector
+                    rootPart.CFrame = rootPart.CFrame + (forwardDirection * 35)
+                else
+                    warn("Character or HumanoidRootPart not found!")
+                end
+
+                -- Fire the Boxing event for all players
+                local Players = game:GetService("Players")
+                local ReplicatedStorage = game:GetService("ReplicatedStorage")
+                local BoxingEvent = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Boxing")
+
+                for _, otherPlayer in pairs(Players:GetPlayers()) do
+                    local args = {
+                        [1] = otherPlayer,
+                        [2] = true
+                    }
+                    BoxingEvent:FireServer(unpack(args))
+                end
+            end
+        end)
+
+        -- Drag functionality (optional)
+        local dragInput
+        local dragStart
+        local startPos
+
+        local function updateButtonPosition(input)
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(
+                startPos.X.Scale,
+                startPos.X.Offset + delta.X,
+                startPos.Y.Scale,
+                startPos.Y.Offset + delta.Y
+            )
+        end
+
+        button.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragStart = input.Position
+                startPos = button.Position
+
+                dragInput = input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragInput:Disconnect()
+                    end
+                end)
+
+                button.InputChanged:Connect(function(inputChange)
+                    if inputChange.UserInputType == Enum.UserInputType.MouseMovement then
+                        updateButtonPosition(inputChange)
+                    end
+                end)
+            end
+        end)
+    end
+
+    -- Create buttons for hit and teleport
+    createButton("Z", UDim2.new(1, -160, 0.1, 0))  -- Hit animation button
+    createButton("T", UDim2.new(1, -160, 0.5, 0))  -- Teleport button
+end
+
+-- Function to override the default walk and idle animations
+local function overrideAnimations()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    local animator = humanoid:WaitForChild("Animator")
+
+    -- Custom walk animation
+    local walkAnimation = Instance.new("Animation")
+    walkAnimation.AnimationId = "rbxassetid://16163350920"  -- Walk animation ID
+
+    -- Custom idle animation
+    local idleAnimation = Instance.new("Animation")
+    idleAnimation.AnimationId = "rbxassetid://16163355836"  -- Idle animation ID
+
+    -- Load and play the walk and idle animations
+    local walkTrack = animator:LoadAnimation(walkAnimation)
+    walkTrack.Priority = Enum.AnimationPriority.Movement
+    walkTrack.Looped = true  -- Ensure the walk animation loops
+
+    local idleTrack = animator:LoadAnimation(idleAnimation)
+    idleTrack.Priority = Enum.AnimationPriority.Idle
+    idleTrack.Looped = true  -- Ensure the idle animation loops
+
+    -- Manage animation playback based on character movement
+    humanoid.Running:Connect(function(speed)
+        if speed > 0 then
+            idleTrack:Stop()  -- Stop idle animation when moving
+            walkTrack:Play()  -- Play walk animation when moving
+        else
+            walkTrack:Stop()  -- Stop walk animation when idle
+            idleTrack:Play()  -- Play idle animation when standing still
+        end
+    end)
+end
+
+-- Run the createButtons function when the player respawns
+game.Players.LocalPlayer.CharacterAdded:Connect(function()
+    wait(0.1)  -- Delay to ensure everything is loaded
+    createButtons()  -- Create buttons after the character loads
+    overrideAnimations()  -- Apply the custom walk and idle animations
+end)
+
+-- Initial creation when the game starts
+createButtons()
+overrideAnimations()
+game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-20, -5, 4)
+
+-- Create an invisible barrier part to prevent falling into the void
+local barrier = Instance.new("Part") -- Create a new part
+barrier.Size = Vector3.new(3000, 1, 3000) -- Adjust the size to cover the whole map (length, height, width) - 3x bigger
+barrier.Position = Vector3.new(0, -10, 0) -- Set lower, at Y = -10
+barrier.Anchored = true -- Make sure the barrier stays in place
+barrier.CanCollide = true -- Players can collide and walk on the barrier
+barrier.Transparency = 1 -- Make the barrier completely invisible
+barrier.Parent = workspace -- Add the barrier to the game
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+
+-- Change the walk speed to 30
+humanoid.WalkSpeed = 30
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local function playSoundAtPart(part)
+    local args = {
+        [1] = "rbxassetid://9133844756",  -- Sound ID
+        [2] = part  -- The body part to play the sound at
+    }
+    ReplicatedStorage:WaitForChild("PlaySoundRemote"):InvokeServer(unpack(args))
+end
+
+-- Function to loop the sound every 2 minutes
+local function loopSound()
+    local character = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
+    local parts = {
+        character:FindFirstChild("Head"),
+        character:FindFirstChild("Torso"),
+        character:FindFirstChild("LeftArm"),
+        character:FindFirstChild("RightArm"),
+        character:FindFirstChild("LeftLeg"),
+        character:FindFirstChild("RightLeg")
+    }
+
+    while true do
+        for i = 1, 10 do  -- Play the sound 10 times
+            for _, part in ipairs(parts) do
+                if part then  -- Check if the part exists
+                    -- Use Task.Spawn to play sounds in parallel
+                    task.spawn(function()
+                        playSoundAtPart(part)  -- Play the sound at each body part
+                    end)
+                end
+            end
+        end
+        wait(120)  -- Wait for 2 minutes (120 seconds) before playing again
+    end
+end
+
+loopSound()  -- Start the loop
+
+game:GetService("ReplicatedStorage"):WaitForChild("PlaySoundRemote"):InvokeServer(unpack(args))
+
